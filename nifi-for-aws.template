@@ -716,9 +716,6 @@
                 "MinSize": {
                     "Ref": "ClusterSize"
                 },
-                "NotificationConfigurations": [
-                    "NotificationConfigurations"
-                ],
                 "Tags": [
                     {
                         "Key": "App",
