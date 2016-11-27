@@ -297,30 +297,329 @@
                 "HVMG2": "NOT_SUPPORTED"
             }
         },
-        "ClusterSize": {
-            "3": {
-                "MasterSize": 1,
-                "MinionSize": 2
-            },
-            "4": {
-                "MasterSize": 1,
-                "MinionSize": 3
-            },
-            "5": {
-                "MasterSize": 1,
-                "MinionSize": 4
+        "VpcCidrs": {
+            "vpc": {
+                "cidr": "172.31.0.0/16"
             }
         }
     },
     "Resources": {
-        "NifiNodeLaunchConfiguration": {
+        "VPC": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": {
+                    "Fn::FindInMap": [
+                        "VpcCidrs",
+                        "vpc",
+                        "cidr"
+                    ]
+                },
+                "EnableDnsHostnames": true,
+                "EnableDnsSupport": true,
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "vpc-nifi-",
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "Subnet": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "CidrBlock": {
+                    "Fn::FindInMap": [
+                        "VpcCidrs",
+                        "vpc",
+                        "cidr"
+                    ]
+                },
+                "MapPublicIpOnLaunch": true,
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "sn-nifi-",
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            }
+        },
+        "InternetGateway": {
+            "Type": "AWS::EC2::InternetGateway",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "ig-nifi-",
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "AttachInternetGatewayToVPC": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "InternetGatewayId": {
+                    "Ref": "InternetGateway"
+                },
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            }
+        },
+        "RouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "rt-nifi-",
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "Route": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "InternetGateway"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTable"
+                }
+            }
+        },
+        "AttachRouteTableToSubnet": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "RouteTable"
+                },
+                "SubnetId": {
+                    "Ref": "Subnet"
+                }
+            }
+        },
+        "SecurityGroupInternal": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Enable all VPC internal traffic",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "-1",
+                        "FromPort": "-1",
+                        "ToPort": "-1",
+                        "SourceSecurityGroupId": {
+                            "Fn::GetAtt": [
+                                "VPC",
+                                "DefaultSecurityGroup"
+                            ]
+                        }
+                    },
+                    {
+                        "IpProtocol": "-1",
+                        "FromPort": "-1",
+                        "ToPort": "-1",
+                        "CidrIp": {
+                            "Fn::FindInMap": [
+                                "VpcCidrs",
+                                "vpc",
+                                "cidr"
+                            ]
+                        }
+                    }
+                ],
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": "-1",
+                        "FromPort": "-1",
+                        "ToPort": "-1",
+                        "CidrIp": {
+                            "Fn::FindInMap": [
+                                "VpcCidrs",
+                                "vpc",
+                                "cidr"
+                            ]
+                        }
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "sg-nifi-internal-",
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "SecurityGroupExternal": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Enable all VPC external traffic",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": "-1",
+                        "FromPort": "-1",
+                        "ToPort": "-1",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "sg-nifi-external-",
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "SecurityGroupSSH": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "SSH access",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "sg-nifi-ssh-",
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "NiFiAutoScaling": {
+            "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "Properties": {
+                "DesiredCapacity": {
+                    "Ref": "ClusterSize"
+                },
+                "LaunchConfigurationName": {
+                    "Ref": "NiFiLaunchConfiguration"
+                },
+                "LoadBalancerNames": [
+                    "String"
+                ],
+                "MaxSize": {
+                    "Ref": "ClusterSize"
+                },
+                "MinSize": {
+                    "Ref": "ClusterSize"
+                },
+                "NotificationConfigurations": [
+                    "NotificationConfigurations"
+                ],
+                "Tags": [
+                    "Auto Scaling Tag"
+                ],
+                "VPCZoneIdentifier": [
+                    "String"
+                ]
+            }
+        },
+        "NiFiLaunchConfiguration": {
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Metadata": {
                 "AWS::CloudFormation::Init": {
                     "configSets": {
                         "configure-ec2-instance": [
                             "configure-extra-volume",
-                            "install-cfn",
+                            "configure-cfn",
                             "configure-hostname",
                             "configure-selinux",
                             "disable-swap",
@@ -329,19 +628,12 @@
                             "configure-how-long-sockets-stay-in-timed-wait-state-when-closed"
                         ],
                         "setup-tools": [
+                            "install-java",
                             "install-pip",
                             "install-awscli"
                         ],
-                        "saltstack-install": [
-                            "add-saltstack-repo",
-                            "install-salt-master",
-                            "install-salt-minion"
-                        ],
-                        "saltstack-configure": [
-                            "configure-grains",
-                            "accept-salt-keys",
-                            "sync-salt-data",
-                            "run-highstate"
+                        "install-nifi": [
+                            "install-nifi"
                         ]
                     },
                     "configure-extra-volume": {
@@ -366,7 +658,7 @@
                             }
                         }
                     },
-                    "install-cfn": {
+                    "configure-cfn": {
                         "files": {
                             "/etc/systemd/system/cfn-hup.service": {
                                 "content": {
@@ -527,124 +819,9 @@
                             }
                         }
                     },
-                    "add-saltstack-repo": {
-                        "files": {
-                            "/etc/yum.repos.d/saltstack.repo": {
-                                "content": {
-                                    "Fn::Join": [
-                                        "",
-                                        [
-                                            "[saltstack-repo]\n",
-                                            "name=SaltStack repo for RHEL/CentOS $releasever\n",
-                                            "baseurl=https://repo.saltstack.com/yum/redhat/$releasever/$basearch/latest\n",
-                                            "enabled=1\n",
-                                            "gpgcheck=1\n",
-                                            "gpgkey=https://repo.saltstack.com/yum/redhat/$releasever/$basearch/latest/SALTSTACK-GPG-KEY.pub\n"
-                                        ]
-                                    ]
-                                },
-                                "mode": "00644",
-                                "owner": "root",
-                                "group": "root"
-                            }
-                        },
-                        "commands": {
-                            "update": {
-                                "command": "yum -y update"
-                            }
-                        }
-                    },
-                    "install-salt-master": {
+                    "install-java": {
                         "packages": {
-                            "yum": {
-                                "salt-master": []
-                            }
-                        },
-                        "files": {
-                            "/etc/salt/master.d/10_master.conf": {
-                                "content": {
-                                    "Fn::Join": [
-                                        "",
-                                        [
-                                            "interface: 0.0.0.0\n",
-                                            "state_output: mixed\n"
-                                        ]
-                                    ]
-                                },
-                                "mode": "00644",
-                                "owner": "root",
-                                "group": "root"
-                            },
-                            "/etc/salt/master.d/10_node_groups.conf": {
-                                "content": {
-                                    "Fn::Join": [
-                                        "",
-                                        [
-                                            "nodegroups:\n",
-                                            "  nifinodes: 'G@roles:nifinode*'\n"
-                                        ]
-                                    ]
-                                },
-                                "mode": "00644",
-                                "owner": "root",
-                                "group": "root"
-                            }
-                        },
-                        "commands": {
-                            "01_autostart": {
-                                "command": "systemctl enable salt-master.service"
-                            },
-                            "02_start": {
-                                "command": "systemctl start salt-master.service"
-                            }
-                        }
-                    },
-                    "install-salt-minion": {
-                        "packages": {
-                            "yum": {
-                                "salt-minion": []
-                            }
-                        },
-                        "files": {
-                            "/etc/salt/minion.d/10_minion.conf": {
-                                "content": {
-                                    "Fn::Join": [
-                                        "",
-                                        [
-                                            "master:\n",
-                                            "  ",
-                                            {
-                                                "Ref": "SaltMaster"
-                                            },
-                                            "\n"
-                                        ]
-                                    ]
-                                },
-                                "mode": "00644",
-                                "owner": "root",
-                                "group": "root"
-                            },
-                            "/etc/salt/minion.d/10_mine.conf": {
-                                "content": {
-                                    "Fn::Join": [
-                                        "",
-                                        [
-                                            "mine_interval: 15\n"
-                                        ]
-                                    ]
-                                },
-                                "mode": "00644",
-                                "owner": "root",
-                                "group": "root"
-                            }
-                        },
-                        "commands": {
-                            "01_autostart": {
-                                "command": "systemctl enable salt-minion.service"
-                            },
-                            "02_start": {
-                                "command": "systemctl start salt-minion.service"
-                            }
+                            "java-1.8.0-openjdk": []
                         }
                     },
                     "install-pip": {
@@ -664,60 +841,16 @@
                             }
                         }
                     },
-                    "accept-salt-keys": {
+                    "install-nifi": {
+                        "sources": {
+                            "/opt/nifi": "http://apache.uvigo.es/nifi/1.0.0/nifi-1.0.0-bin.tar.gz"
+                        },
                         "commands": {
-                            "01_sleep": {
-                                "command": "sleep 15"
+                            "01_set_nifi_home": {
+                                "command": "echo 'export NIFI_HOME=/opt/nifi' >> /etc/profile.d/nifi.sh"
                             },
-                            "02_accept_all_keys": {
-                                "command": "salt-key -A -y"
-                            },
-                            "03_sleep": {
-                                "command": "sleep 15"
-                            }
-                        }
-                    },
-                    "sync-salt-data": {
-                        "commands": {
-                            "01_download_salt": {
-                                "command": "aws s3 sync s3://ggc-cloudformation/cloudera/salt/ /srv/salt/ --region eu-central-1"
-                            },
-                            "02_download_pillar": {
-                                "command": "aws s3 sync s3://ggc-cloudformation/cloudera/pillar/ /srv/pillar/ --region eu-central-1"
-                            },
-                            "03_sync_all": {
-                                "command": "salt '*' saltutil.sync_all"
-                            },
-                            "04_force_sync_mine": {
-                                "command": "salt '*' saltutil.refresh_pillar"
-                            },
-                            "05_force_sync_mine": {
-                                "command": "salt '*' mine.update"
-                            }
-                        }
-                    },
-                    "run-highstate": {
-                        "commands": {
-                            "01_run_highstate": {
-                                "command": "salt '*' state.highstate"
-                            }
-                        }
-                    },
-                    "configure-grains": {
-                        "files": {
-                            "/etc/salt/grains": {
-                                "content": {
-                                    "Fn::Join": [
-                                        "",
-                                        [
-                                            "roles:\n",
-                                            "  - nifinode\n"
-                                        ]
-                                    ]
-                                },
-                                "mode": "00644",
-                                "owner": "root",
-                                "group": "root"
+                            "02_install_nifi_services": {
+                                "command": "/opt/nifi/bin/nifi.sh install"
                             }
                         }
                     }
