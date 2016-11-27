@@ -1059,7 +1059,7 @@
                                 {
                                     "Ref": "AWS::StackName"
                                 },
-                                "         --resource NiFiLaunchConfiguration ",
+                                "         --resource NiFiAutoScaling ",
                                 "         --region ",
                                 {
                                     "Ref": "AWS::Region"
