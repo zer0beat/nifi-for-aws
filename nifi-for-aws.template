@@ -1047,7 +1047,7 @@
                                 {
                                     "Ref": "AWS::StackName"
                                 },
-                                "         --resource NifiNodeLaunchConfiguration ",
+                                "         --resource NiFiLaunchConfiguration ",
                                 "         --configsets configure-ec2-instance,setup-tools,install-nifi ",
                                 "         --region ",
                                 {
@@ -1059,7 +1059,7 @@
                                 {
                                     "Ref": "AWS::StackName"
                                 },
-                                "         --resource NifiNodeLaunchConfiguration ",
+                                "         --resource NiFiLaunchConfiguration ",
                                 "         --region ",
                                 {
                                     "Ref": "AWS::Region"
