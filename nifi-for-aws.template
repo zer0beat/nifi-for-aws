@@ -297,6 +297,41 @@
                 "HVMG2": "NOT_SUPPORTED"
             }
         },
+        "Region2Principal": {
+            "us-east-1": {
+                "EC2Principal": "ec2.amazonaws.com"
+            },
+            "us-west-2": {
+                "EC2Principal": "ec2.amazonaws.com"
+            },
+            "us-west-1": {
+                "EC2Principal": "ec2.amazonaws.com"
+            },
+            "eu-west-1": {
+                "EC2Principal": "ec2.amazonaws.com"
+            },
+            "ap-southeast-1": {
+                "EC2Principal": "ec2.amazonaws.com"
+            },
+            "ap-southeast-2": {
+                "EC2Principal": "ec2.amazonaws.com"
+            },
+            "ap-northeast-1": {
+                "EC2Principal": "ec2.amazonaws.com"
+            },
+            "ap-northeast-2": {
+                "EC2Principal": "ec2.amazonaws.com"
+            },
+            "sa-east-1": {
+                "EC2Principal": "ec2.amazonaws.com"
+            },
+            "cn-north-1": {
+                "EC2Principal": "ec2.amazonaws.com.cn"
+            },
+            "eu-central-1": {
+                "EC2Principal": "ec2.amazonaws.com"
+            }
+        },
         "VpcCidrs": {
             "vpc": {
                 "cidr": "172.31.0.0/16"
@@ -304,6 +339,81 @@
         }
     },
     "Resources": {
+        "NiFiEc2ResourcePolicy": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "NiFi_EC2Resource_Policy",
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "ec2:Describe*"
+                            ],
+                            "Resource": [
+                                "*"
+                            ]
+                        }
+                    ]
+                },
+                "Roles": [
+                    {
+                        "Ref": "NiFiEc2ResourceRole"
+                    }
+                ]
+            }
+        },
+        "NiFiEc2ResourceRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "RoleName": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "NiFi_Ec2Resource_Role-",
+                            {
+                                "Ref": "AWS::StackName"
+                            }
+                        ]
+                    ]
+                },
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    {
+                                        "Fn::FindInMap": [
+                                            "Region2Principal",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "EC2Principal"
+                                        ]
+                                    }
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "NiFiEc2ResourceInstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Roles": [
+                    {
+                        "Ref": "NiFiEc2ResourceRole"
+                    }
+                ]
+            }
+        },
         "VPC": {
             "Type": "AWS::EC2::VPC",
             "Properties": {
@@ -584,6 +694,14 @@
             }
         },
         "NiFiAutoScaling": {
+            "CreationPolicy": {
+                "ResourceSignal": {
+                    "Count": {
+                        "Ref": "ClusterSize"
+                    },
+                    "Timeout": "PT2H"
+                }
+            },
             "Type": "AWS::AutoScaling::AutoScalingGroup",
             "Properties": {
                 "DesiredCapacity": {
@@ -592,9 +710,6 @@
                 "LaunchConfigurationName": {
                     "Ref": "NiFiLaunchConfiguration"
                 },
-                "LoadBalancerNames": [
-                    "String"
-                ],
                 "MaxSize": {
                     "Ref": "ClusterSize"
                 },
@@ -605,10 +720,21 @@
                     "NotificationConfigurations"
                 ],
                 "Tags": [
-                    "Auto Scaling Tag"
+                    {
+                        "Key": "App",
+                        "Value": "Apache Nifi",
+                        "PropagateAtLaunch": true
+                    },
+                    {
+                        "Key": "Version",
+                        "Value": "1.0.0",
+                        "PropagateAtLaunch": true
+                    }
                 ],
                 "VPCZoneIdentifier": [
-                    "String"
+                    {
+                        "Ref": "Subnet"
+                    }
                 ]
             }
         },
@@ -871,12 +997,10 @@
                         }
                     }
                 ],
-                "ClassicLinkVPCId": "String",
-                "ClassicLinkVPCSecurityGroups": [
-                    "String"
-                ],
-                "EbsOptimized": true,
-                "IamInstanceProfile": "String",
+                "EbsOptimized": false,
+                "IamInstanceProfile": {
+                    "Ref": "NiFiEc2ResourceInstanceProfile"
+                },
                 "ImageId": {
                     "Fn::FindInMap": [
                         "AWSRegionArch2AMI",
@@ -901,7 +1025,15 @@
                     "Ref": "KeyName"
                 },
                 "SecurityGroups": [
-                    "SecurityGroup"
+                    {
+                        "Ref": "SecurityGroupInternal"
+                    },
+                    {
+                        "Ref": "SecurityGroupExternal"
+                    },
+                    {
+                        "Ref": "SecurityGroupSSH"
+                    }
                 ],
                 "UserData": {
                     "Fn::Base64": {
@@ -919,7 +1051,7 @@
                                     "Ref": "AWS::StackName"
                                 },
                                 "         --resource NifiNodeLaunchConfiguration ",
-                                "         --configsets configure-ec2-instance,setup-tools,saltstack-install,saltstack-configure ",
+                                "         --configsets configure-ec2-instance,setup-tools,install-nifi ",
                                 "         --region ",
                                 {
                                     "Ref": "AWS::Region"
