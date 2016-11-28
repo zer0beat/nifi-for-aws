@@ -725,7 +725,7 @@
                 "Tags": [
                     {
                         "Key": "App",
-                        "Value": "Apache Nifi",
+                        "Value": "Apache NiFi",
                         "PropagateAtLaunch": true
                     },
                     {
