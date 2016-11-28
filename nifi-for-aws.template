@@ -1036,7 +1036,13 @@
                                             "HOME"
                                         ]
                                     },
-                                    "JAVA_HOME": "/usr/lib/jvm/jre"
+                                    "JAVA_HOME": "/usr/lib/jvm/jre",
+                                    "STACKNAME": {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "REGION": {
+                                        "Ref": "AWS::Region"
+                                    }
                                 },
                                 "command": "chmod +x /opt/nifi-configuration.sh && /opt/nifi-configuration.sh"
                             },
