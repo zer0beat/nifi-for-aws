@@ -336,6 +336,12 @@
             "vpc": {
                 "cidr": "172.31.0.0/16"
             }
+        },
+        "NiFi": {
+            "variables": {
+                "VERSION": "1.0.0",
+                "HOME": "/opt/nifi"
+            }
         }
     },
     "Resources": {
@@ -747,8 +753,7 @@
                             "configure-selinux",
                             "disable-swap",
                             "increase-number-of-tcp-socket-ports-available",
-                            "configure-security-limits",
-                            "configure-how-long-sockets-stay-in-timed-wait-state-when-closed"
+                            "configure-security-limits"
                         ],
                         "setup-tools": [
                             "install-java",
@@ -836,15 +841,15 @@
                                         [
                                             "[cfn-auto-reloader-hook]\n",
                                             "triggers=post.update\n",
-                                            "path=Resources.MasterMinion.Metadata.AWS::CloudFormation::Init\n",
+                                            "path=Resources.NiFiLaunchConfiguration.Metadata.AWS::CloudFormation::Init\n",
                                             "action=/usr/bin/cfn-init -v ",
                                             "--stack ",
                                             {
                                                 "Ref": "AWS::StackName"
                                             },
                                             " ",
-                                            "--resource MasterMinion ",
-                                            "--configsets setup-tools,saltstack-install,saltstack-configure ",
+                                            "--resource NiFiLaunchConfiguration ",
+                                            "--configsets configure-ec2-instance,setup-tools,install-nifi ",
                                             "--region ",
                                             {
                                                 "Ref": "AWS::Region"
@@ -911,10 +916,13 @@
                                 "command": "echo '*  soft  nofile  50000' >> /etc/security/limits.d/10-nofile.conf"
                             },
                             "03_set_maximum_forked_processes_hard": {
-                                "command": "echo '*  hard  nproc  10000' > /etc/security/limits.d/10-nproc.conf"
+                                "command": "echo '*  hard  nproc  10000' > /etc/security/limits.d/20-nproc.conf"
                             },
                             "04_set_maximum_forked_processes_hard": {
-                                "command": "echo '*  soft  nproc  50000' >> /etc/security/limits.d/10-nproc.conf"
+                                "command": "echo '*  soft  nproc  10000' >> /etc/security/limits.d/20-nproc.conf"
+                            },
+                            "05_set_maximum_forked_processes_hard": {
+                                "command": "echo 'root  soft  nproc  unlimited' >> /etc/security/limits.d/20-nproc.conf"
                             }
                         }
                     },
@@ -922,13 +930,6 @@
                         "commands": {
                             "01_increase_number_of_tcp_socket_ports_available": {
                                 "command": "sysctl -w net.ipv4.ip_local_port_range=\"10000 65000\""
-                            }
-                        }
-                    },
-                    "configure-how-long-sockets-stay-in-timed-wait-state-when-closed": {
-                        "commands": {
-                            "01_configure_how_long_sockets_stay_in_timed_waiit_state_when_closed": {
-                                "command": "sysctl -w net.ipv4.netfilter.ip_conntrack_tcp_timeout_time_wait=\"1\""
                             }
                         }
                     },
@@ -944,7 +945,14 @@
                     },
                     "install-java": {
                         "packages": {
-                            "java-1.8.0-openjdk": []
+                            "yum": {
+                                "java-1.8.0-openjdk": []
+                            }
+                        },
+                        "commands": {
+                            "01_set_java_home": {
+                                "command": "echo 'export JAVA_HOME=/usr/lib/jvm/jre' >> /etc/profile.d/java.sh"
+                            }
                         }
                     },
                     "install-pip": {
@@ -965,15 +973,84 @@
                         }
                     },
                     "install-nifi": {
-                        "sources": {
-                            "/opt/nifi": "http://apache.uvigo.es/nifi/1.0.0/nifi-1.0.0-bin.tar.gz"
-                        },
                         "commands": {
-                            "01_set_nifi_home": {
-                                "command": "echo 'export NIFI_HOME=/opt/nifi' >> /etc/profile.d/nifi.sh"
+                            "01_download_nifi": {
+                                "env": {
+                                    "VERSION": {
+                                        "Fn::FindInMap": [
+                                            "NiFi",
+                                            "variables",
+                                            "VERSION"
+                                        ]
+                                    }
+                                },
+                                "command": "curl -o /tmp/nifi-${VERSION}-bin.tar.gz -L http://mirrors.whoishostingthis.com/apache/nifi/${VERSION}/nifi-${VERSION}-bin.tar.gz"
                             },
-                            "02_install_nifi_services": {
-                                "command": "/opt/nifi/bin/nifi.sh install"
+                            "02_set_nifi_home": {
+                                "env": {
+                                    "NIFI_HOME": {
+                                        "Fn::FindInMap": [
+                                            "NiFi",
+                                            "variables",
+                                            "HOME"
+                                        ]
+                                    }
+                                },
+                                "command": "echo \"export NIFI_HOME=${NIFI_HOME}\" >> /etc/profile.d/nifi.sh"
+                            },
+                            "03_extract_nifi": {
+                                "env": {
+                                    "VERSION": {
+                                        "Fn::FindInMap": [
+                                            "NiFi",
+                                            "variables",
+                                            "VERSION"
+                                        ]
+                                    },
+                                    "NIFI_HOME": {
+                                        "Fn::FindInMap": [
+                                            "NiFi",
+                                            "variables",
+                                            "HOME"
+                                        ]
+                                    }
+                                },
+                                "command": "mkdir -p ${NIFI_HOME} && tar -C ${NIFI_HOME} -xzf /tmp/nifi-${VERSION}-bin.tar.gz --strip-components 1 nifi-${VERSION}/ && rm -rf /tmp/nifi-${VERSION}-bin.tar.gz"
+                            },
+                            "04_download_nifi_configuration_script": {
+                                "command": "curl -o /opt/nifi-configuration.sh -L https://github.com/zer0beat/nifi-for-aws/raw/master/nifi-configuration.sh"
+                            },
+                            "05_configure_nifi_env": {
+                                "env": {
+                                    "VERSION": {
+                                        "Fn::FindInMap": [
+                                            "NiFi",
+                                            "variables",
+                                            "VERSION"
+                                        ]
+                                    },
+                                    "NIFI_HOME": {
+                                        "Fn::FindInMap": [
+                                            "NiFi",
+                                            "variables",
+                                            "HOME"
+                                        ]
+                                    },
+                                    "JAVA_HOME": "/usr/lib/jvm/jre"
+                                },
+                                "command": "chmod +x /opt/nifi-configuration.sh && /opt/nifi-configuration.sh"
+                            },
+                            "06_install_nifi_services": {
+                                "env": {
+                                    "NIFI_HOME": {
+                                        "Fn::FindInMap": [
+                                            "NiFi",
+                                            "variables",
+                                            "HOME"
+                                        ]
+                                    }
+                                },
+                                "command": "${NIFI_HOME}/bin/nifi.sh install"
                             }
                         }
                     }
