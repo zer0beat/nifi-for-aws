@@ -17,13 +17,13 @@ SITE2SITE_PORT=9998
 echo "NiFi ${VERSION} configuration script"
 
 echo "Configure ${NIFI_HOME}/bin/nifi-env.sh"
-#echo "export JAVA_HOME=${JAVA_HOME}" >> ${NIFI_HOME}/bin/nifi-env.sh
 JAVA_HOME_ESCAPED=$(echo "$JAVA_HOME" | sed 's/\//\\\//g')
 sed -i.backup -e "/^#.*JAVA_HOME/s/^#//" -e "s/\(.*JAVA_HOME=\).*/\1$JAVA_HOME_ESCAPED/" ${NIFI_HOME}/bin/nifi-env.sh
 
 clusterNodes="$(aws ec2 describe-instances --filters Name=state-reason-message,Values=running,Name=tag:App,Values='Apache NiFi',Name=tag:aws:cloudformation:stack-name,Values=${STACKNAME} --region ${REGION} --query 'Reservations[*].Instances[*].[AmiLaunchIndex,PrivateDnsName]' --output text)"
 
 echo "Configure ${NIFI_HOME}/conf/zookeeper.properties"
+sed -i.backup -e "/server.1/ d" ${NIFI_HOME}/conf/zookeeper.properties
 IFS=$'\n'
 for node in ${clusterNodes}
 do 
