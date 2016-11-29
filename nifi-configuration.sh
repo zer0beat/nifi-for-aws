@@ -2,19 +2,21 @@
 
 HOSTNAME=$(curl -sL http://instance-data/latest/meta-data/hostname)
 AMI_LAUNCH_INDEX=$(curl -sL http://instance-data/latest/meta-data/ami-launch-index)
-
-echo "JAVA_HOME=${JAVA_HOME}"
-echo "VERSION=${VERSION}"
-echo "NIFI_HOME=${NIFI_HOME}"
-echo "STACKNAME=${STACKNAME}"
-echo "REGION=${REGION}"
-echo "HOSTNAME=${HOSTNAME}"
-echo "AMI_LAUNCH_INDEX=${AMI_LAUNCH_INDEX}"
-
 COORDINATION_PORT=9999
 SITE2SITE_PORT=9998
 
-echo "NiFi ${VERSION} configuration script"
+echo "##### Environment variables #####"
+echo "  JAVA_HOME=${JAVA_HOME}"
+echo "  VERSION=${VERSION}"
+echo "  NIFI_HOME=${NIFI_HOME}"
+echo "  STACKNAME=${STACKNAME}"
+echo "  REGION=${REGION}"
+echo "  HOSTNAME=${HOSTNAME}"
+echo "  AMI_LAUNCH_INDEX=${AMI_LAUNCH_INDEX}"
+echo "  COORDINATION_PORT=${COORDINATION_PORT}"
+echo "  SITE2SITE_PORT=${SITE2SITE_PORT}"
+
+echo "##### NiFi ${VERSION} configuration script #####"
 
 echo "Configure ${NIFI_HOME}/bin/nifi-env.sh"
 JAVA_HOME_ESCAPED=$(echo "$JAVA_HOME" | sed 's/\//\\\//g')
