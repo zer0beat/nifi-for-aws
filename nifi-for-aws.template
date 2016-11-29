@@ -342,7 +342,7 @@
         },
         "NiFi": {
             "variables": {
-                "VERSION": "1.0.0",
+                "VERSION": "1.1.0",
                 "HOME": "/opt/nifi"
             }
         }
@@ -733,7 +733,13 @@
                     },
                     {
                         "Key": "Version",
-                        "Value": "1.0.0",
+                        "Value": {
+                            "Fn::FindInMap": [
+                                "NiFi",
+                                "variables",
+                                "VERSION"
+                            ]
+                        },
                         "PropagateAtLaunch": true
                     }
                 ],
