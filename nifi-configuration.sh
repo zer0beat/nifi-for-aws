@@ -47,6 +47,6 @@ sed -i.backup \
     -e "s/\(nifi\.cluster\.node\.address=\).*\$/\1${HOSTNAME}/" \
     -e "s/\(nifi\.cluster\.node\.protocol\.port=\).*\$/\1${COORDINATION_PORT}/" \
     -e "s/\(nifi\.remote\.input\.host=\).*\$/\1${HOSTNAME}/" \
-    -e "s/\(nifi\.remote\.input\.secure=\).*\$/\1false" \
+    -e "s/\(nifi\.remote\.input\.secure=\).*\$/\1false/" \
     -e "s/\(nifi\.remote\.input\.socket\.port=\).*\$/\1${SITE2SITE_PORT}/" \
     ${NIFI_HOME}/conf/nifi.properties
