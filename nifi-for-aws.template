@@ -987,7 +987,7 @@
                                         ]
                                     }
                                 },
-                                "command": "curl -o /tmp/nifi-${VERSION}-bin.tar.gz -L http://mirrors.whoishostingthis.com/apache/nifi/${VERSION}/nifi-${VERSION}-bin.tar.gz"
+                                "command": "curl -o /tmp/nifi-${VERSION}-bin.tar.gz -L http://ftp.heanet.ie/mirrors/www.apache.org/dist/nifi/${VERSION}/nifi-${VERSION}-bin.tar.gz"
                             },
                             "02_set_nifi_home": {
                                 "env": {
