@@ -10,9 +10,12 @@
         },
         "ClusterSize": {
             "Default": "3",
-            "Description": "Number of nodes in the Apache NiFi cluster (1-5).",
-            "MaxValue": "5",
-            "MinValue": "3",
+            "Description": "Number of nodes in the Apache NiFi cluster (3-5).",
+            "AllowedValues": [
+                "3",
+                "4",
+                "5"
+            ],
             "Type": "Number"
         },
         "InstanceType": {
@@ -1020,7 +1023,7 @@
                             "04_download_nifi_configuration_script": {
                                 "command": "curl -o /opt/nifi-configuration.sh -L https://github.com/zer0beat/nifi-for-aws/raw/master/nifi-configuration.sh"
                             },
-                            "05_configure_nifi_env": {
+                            "05_configure_nifi": {
                                 "env": {
                                     "VERSION": {
                                         "Fn::FindInMap": [
