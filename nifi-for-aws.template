@@ -72,6 +72,16 @@
             "Default": "standard",
             "Description": "Ephemeral storage volume type",
             "Type": "String"
+        },
+        "GitBranch": {
+            "AllowedValues": [
+                "master",
+                "feature/configure-data-store",
+                "feature/configure-ssl"
+            ],
+            "Default": "master",
+            "Description": "Git branch where to fetch nifi-configuration.sh",
+            "Type": "String"
         }
     },
     "Metadata": {
@@ -1026,7 +1036,12 @@
                                 "command": "mkdir -p ${NIFI_HOME} && tar -C ${NIFI_HOME} -xzf /tmp/nifi-${VERSION}-bin.tar.gz --strip-components 1 nifi-${VERSION}/ && rm -rf /tmp/nifi-${VERSION}-bin.tar.gz"
                             },
                             "04_download_nifi_configuration_script": {
-                                "command": "curl -o /opt/nifi-configuration.sh -L https://github.com/zer0beat/nifi-for-aws/raw/master/nifi-configuration.sh"
+                                "env": {
+                                    "GIT_BRANCH": {
+                                        "Ref": "GitBranch"
+                                    }
+                                },
+                                "command": "curl -o /opt/nifi-configuration.sh -L https://github.com/zer0beat/nifi-for-aws/raw/${GIT_BRANCH}/nifi-configuration.sh"
                             },
                             "05_configure_nifi": {
                                 "env": {
