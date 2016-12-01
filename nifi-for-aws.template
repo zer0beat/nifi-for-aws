@@ -20,7 +20,6 @@
         },
         "InstanceType": {
             "AllowedValues": [
-                "t2.micro",
                 "t2.small",
                 "t2.medium",
                 "t2.large",
@@ -54,8 +53,8 @@
                 "i2.8xlarge"
             ],
             "ConstraintDescription": "Must be a valid EC2 HVM instance type.",
-            "Default": "t2.micro",
-            "Description": "EC2 HVM instance type (t2.micro, m3.medium, etc).",
+            "Default": "t2.small",
+            "Description": "EC2 HVM instance type (t2.small, m3.medium, etc).",
             "Type": "String"
         },
         "DiskSize": {
@@ -1066,6 +1065,9 @@
                                     }
                                 },
                                 "command": "${NIFI_HOME}/bin/nifi.sh install"
+                            },
+                            "07_start_nifi_service": {
+                                "command": "service nifi start"
                             }
                         }
                     }
