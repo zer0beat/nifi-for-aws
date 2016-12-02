@@ -4,6 +4,7 @@ HOSTNAME=$(curl -sL http://instance-data/latest/meta-data/hostname)
 AMI_LAUNCH_INDEX=$(curl -sL http://instance-data/latest/meta-data/ami-launch-index)
 COORDINATION_PORT=9999
 SITE2SITE_PORT=9998
+DISK_PATH="\/mnt\/data01\/"
 
 echo "##### Environment variables #####"
 echo "  JAVA_HOME=${JAVA_HOME}"
@@ -15,6 +16,7 @@ echo "  HOSTNAME=${HOSTNAME}"
 echo "  AMI_LAUNCH_INDEX=${AMI_LAUNCH_INDEX}"
 echo "  COORDINATION_PORT=${COORDINATION_PORT}"
 echo "  SITE2SITE_PORT=${SITE2SITE_PORT}"
+echo "  DISK_PATH=${DISK_PATH}"
 
 echo "##### NiFi ${VERSION} configuration script #####"
 
@@ -49,4 +51,5 @@ sed -i.backup \
     -e "s/\(nifi\.remote\.input\.host=\).*\$/\1${HOSTNAME}/" \
     -e "s/\(nifi\.remote\.input\.secure=\).*\$/\1false/" \
     -e "s/\(nifi\.remote\.input\.socket\.port=\).*\$/\1${SITE2SITE_PORT}/" \
+    -e "s/\(nifi\.content\.repository\.directory\.default=\).*\$/\1${DISK_PATH}/" \
     ${NIFI_HOME}/conf/nifi.properties
