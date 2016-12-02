@@ -74,13 +74,8 @@
             "Type": "String"
         },
         "GitBranch": {
-            "AllowedValues": [
-                "master",
-                "feature/configure-data-store",
-                "feature/configure-ssl"
-            ],
             "Default": "master",
-            "Description": "Git branch where to fetch nifi-configuration.sh",
+            "Description": "Current repository: https://github.com/zer0beat/nifi-for-aws/",
             "Type": "String"
         }
     },
@@ -112,6 +107,14 @@
                     "Parameters": [
                         "ClusterSize"
                     ]
+                },
+                {
+                    "Label": {
+                        "default": "Advanced Options"
+                    },
+                    "Parameters": [
+                        "GitBranch"
+                    ]
                 }
             ],
             "ParameterLabels": {
@@ -129,6 +132,9 @@
                 },
                 "DiskType": {
                     "default": "Nodes ephemeral storage volume type?"
+                },
+                "GitBranch": {
+                    "default": "Git branch where to fetch repository files"
                 }
             }
         }
