@@ -777,12 +777,12 @@
                             "configure-selinux",
                             "disable-swap",
                             "increase-number-of-tcp-socket-ports-available",
-                            "configure-security-limits",
-                            "configure-ssh-keys"
+                            "configure-security-limits"
                         ],
                         "setup-tools": [
                             "install-pip",
                             "install-awscli",
+                            "configure-ssh-keys",
                             "install-ansible"
                         ]
                     },
@@ -965,16 +965,6 @@
                             }
                         }
                     },
-                    "configure-ssh-keys": {
-                        "commands": {
-                            "01_download_script": {
-                                "command": "curl -o /root/create-ssh-keys.sh -L https://github.com/zer0beat/nifi-for-aws/raw/${GIT_BRANCH}/ansible/create-ssh-keys.sh && chmod +x /root/create-ssh-keys.sh"
-                            },
-                            "02_run_script": {
-                                "command": "/root/create-ssh-keys.sh"
-                            }
-                        }
-                    },
                     "install-pip": {
                         "commands": {
                             "01_download": {
@@ -989,6 +979,38 @@
                         "commands": {
                             "01_install": {
                                 "command": "pip install awscli"
+                            }
+                        }
+                    },
+                    "configure-ssh-keys": {
+                        "commands": {
+                            "01_download_script": {
+                                "env": {
+                                    "GIT_BRANCH": {
+                                        "Ref": "GitBranch"
+                                    },
+                                    "STACKNAME": {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "REGION": {
+                                        "Ref": "AWS::Region"
+                                    }
+                                },
+                                "command": "curl -o /root/create-ssh-keys.sh -L https://github.com/zer0beat/nifi-for-aws/raw/${GIT_BRANCH}/ansible/create-ssh-keys.sh && chmod +x /root/create-ssh-keys.sh"
+                            },
+                            "02_run_script": {
+                                "env": {
+                                    "GIT_BRANCH": {
+                                        "Ref": "GitBranch"
+                                    },
+                                    "STACKNAME": {
+                                        "Ref": "AWS::StackName"
+                                    },
+                                    "REGION": {
+                                        "Ref": "AWS::Region"
+                                    }
+                                },
+                                "command": "/root/create-ssh-keys.sh"
                             }
                         }
                     },
