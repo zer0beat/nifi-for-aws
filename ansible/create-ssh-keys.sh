@@ -4,6 +4,7 @@ HOSTNAME=$(curl -sL http://instance-data/latest/meta-data/hostname)
 AMI_LAUNCH_INDEX=$(curl -sL http://instance-data/latest/meta-data/ami-launch-index)
 
 echo "##### Environment variables #####"
+echo "  GIT_BRANCH=${GIT_BRANCH}"
 echo "  STACKNAME=${STACKNAME}"
 echo "  REGION=${REGION}"
 echo "  HOSTNAME=${HOSTNAME}"
