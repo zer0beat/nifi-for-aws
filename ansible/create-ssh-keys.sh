@@ -23,6 +23,15 @@ then
     echo "##### Create SSH keys #####"
     clusterNodes="$(aws ec2 describe-instances --filters Name=instance-state-name,Values=running Name=tag:App,Values='Apache NiFi' Name=tag:aws:cloudformation:stack-name,Values=${STACKNAME} --region ${REGION} --query 'Reservations[*].Instances[*].[PrivateDnsName]' --output text)"
 
+    # Wait to other instances
+    for node in ${clusterNodes}
+    do 
+        until ssh -i /root/unsecure/id_rsa -q ${node} exit
+        do
+            sleep 10
+        done
+    done
+
     # Create and share ssh keys on all instances
     IFS=$'\n'
     for node in ${clusterNodes}
