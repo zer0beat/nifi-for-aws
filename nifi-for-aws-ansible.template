@@ -1,0 +1,1097 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Apache NiFi Cluster",
+    "Parameters": {
+        "KeyName": {
+            "ConstraintDescription": "must be the name of an existing EC2 KeyPair.",
+            "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+            "MinLength": "1",
+            "Type": "AWS::EC2::KeyPair::KeyName"
+        },
+        "ClusterSize": {
+            "Default": "3",
+            "Description": "Number of nodes in the Apache NiFi cluster (3-5).",
+            "AllowedValues": [
+                "3",
+                "4",
+                "5"
+            ],
+            "Type": "Number"
+        },
+        "InstanceType": {
+            "AllowedValues": [
+                "t2.small",
+                "t2.medium",
+                "t2.large",
+                "m4.large",
+                "m4.xlarge",
+                "m4.2xlarge",
+                "m4.4xlarge",
+                "m4.10xlarge",
+                "m3.medium",
+                "m3.large",
+                "m3.xlarge",
+                "m3.2xlarge",
+                "c4.large",
+                "c4.xlarge",
+                "c4.2xlarge",
+                "c4.4xlarge",
+                "c4.8xlarge",
+                "c3.large",
+                "c3.xlarge",
+                "c3.2xlarge",
+                "c3.4xlarge",
+                "c3.8xlarge",
+                "r3.large",
+                "r3.xlarge",
+                "r3.2xlarge",
+                "r3.4xlarge",
+                "r3.8xlarge",
+                "i2.xlarge",
+                "i2.2xlarge",
+                "i2.4xlarge",
+                "i2.8xlarge"
+            ],
+            "ConstraintDescription": "Must be a valid EC2 HVM instance type.",
+            "Default": "t2.small",
+            "Description": "EC2 HVM instance type (t2.small, m3.medium, etc).",
+            "Type": "String"
+        },
+        "DiskSize": {
+            "Default": "20",
+            "Description": "Size of ephemeral storage volume in GiB",
+            "MaxValue": "128",
+            "MinValue": "20",
+            "Type": "Number"
+        },
+        "DiskType": {
+            "AllowedValues": [
+                "standard",
+                "gp2"
+            ],
+            "Default": "standard",
+            "Description": "Ephemeral storage volume type",
+            "Type": "String"
+        },
+        "GitBranch": {
+            "Default": "master",
+            "Description": "Current repository: https://github.com/zer0beat/nifi-for-aws/",
+            "Type": "String"
+        }
+    },
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": {
+                        "default": "Amazon EC2 Properties"
+                    },
+                    "Parameters": [
+                        "KeyName"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Apache NiFi Properties"
+                    },
+                    "Parameters": [
+                        "InstanceType",
+                        "DiskSize",
+                        "DiskType"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Cluster Size"
+                    },
+                    "Parameters": [
+                        "ClusterSize"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Advanced Options"
+                    },
+                    "Parameters": [
+                        "GitBranch"
+                    ]
+                }
+            ],
+            "ParameterLabels": {
+                "KeyName": {
+                    "default": "Which SSH key to use?"
+                },
+                "ClusterSize": {
+                    "default": "Number of Apache NiFi nodes?"
+                },
+                "InstanceType": {
+                    "default": "Apache Nifi nodes instance type?"
+                },
+                "DiskSize": {
+                    "default": "Nodes ephemeral storage volume size?"
+                },
+                "DiskType": {
+                    "default": "Nodes ephemeral storage volume type?"
+                },
+                "GitBranch": {
+                    "default": "Git branch where to fetch repository files"
+                }
+            }
+        }
+    },
+    "Mappings": {
+        "AWSInstanceType2Arch": {
+            "c3.2xlarge": {
+                "Arch": "HVM64"
+            },
+            "c3.4xlarge": {
+                "Arch": "HVM64"
+            },
+            "c3.8xlarge": {
+                "Arch": "HVM64"
+            },
+            "c3.large": {
+                "Arch": "HVM64"
+            },
+            "c3.xlarge": {
+                "Arch": "HVM64"
+            },
+            "c4.2xlarge": {
+                "Arch": "HVM64"
+            },
+            "c4.4xlarge": {
+                "Arch": "HVM64"
+            },
+            "c4.8xlarge": {
+                "Arch": "HVM64"
+            },
+            "c4.large": {
+                "Arch": "HVM64"
+            },
+            "c4.xlarge": {
+                "Arch": "HVM64"
+            },
+            "cc2.8xlarge": {
+                "Arch": "HVM64"
+            },
+            "cr1.8xlarge": {
+                "Arch": "HVM64"
+            },
+            "d2.2xlarge": {
+                "Arch": "HVM64"
+            },
+            "d2.4xlarge": {
+                "Arch": "HVM64"
+            },
+            "d2.8xlarge": {
+                "Arch": "HVM64"
+            },
+            "d2.xlarge": {
+                "Arch": "HVM64"
+            },
+            "g2.2xlarge": {
+                "Arch": "HVMG2"
+            },
+            "hi1.4xlarge": {
+                "Arch": "HVM64"
+            },
+            "hs1.8xlarge": {
+                "Arch": "HVM64"
+            },
+            "i2.2xlarge": {
+                "Arch": "HVM64"
+            },
+            "i2.4xlarge": {
+                "Arch": "HVM64"
+            },
+            "i2.8xlarge": {
+                "Arch": "HVM64"
+            },
+            "i2.xlarge": {
+                "Arch": "HVM64"
+            },
+            "m3.2xlarge": {
+                "Arch": "HVM64"
+            },
+            "m3.large": {
+                "Arch": "HVM64"
+            },
+            "m3.medium": {
+                "Arch": "HVM64"
+            },
+            "m3.xlarge": {
+                "Arch": "HVM64"
+            },
+            "m4.10xlarge": {
+                "Arch": "HVM64"
+            },
+            "m4.2xlarge": {
+                "Arch": "HVM64"
+            },
+            "m4.4xlarge": {
+                "Arch": "HVM64"
+            },
+            "m4.large": {
+                "Arch": "HVM64"
+            },
+            "m4.xlarge": {
+                "Arch": "HVM64"
+            },
+            "r3.2xlarge": {
+                "Arch": "HVM64"
+            },
+            "r3.4xlarge": {
+                "Arch": "HVM64"
+            },
+            "r3.8xlarge": {
+                "Arch": "HVM64"
+            },
+            "r3.large": {
+                "Arch": "HVM64"
+            },
+            "r3.xlarge": {
+                "Arch": "HVM64"
+            },
+            "t2.large": {
+                "Arch": "HVM64"
+            },
+            "t2.medium": {
+                "Arch": "HVM64"
+            },
+            "t2.micro": {
+                "Arch": "HVM64"
+            },
+            "t2.small": {
+                "Arch": "HVM64"
+            }
+        },
+        "AWSRegionArch2AMI": {
+            "ap-northeast-1": {
+                "HVM64": "NOT_SUPPORTED",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "ap-northeast-2": {
+                "HVM64": "NOT_SUPPORTED",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "ap-south-1": {
+                "HVM64": "NOT_SUPPORTED",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "ap-southeast-1": {
+                "HVM64": "NOT_SUPPORTED",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "ap-southeast-2": {
+                "HVM64": "NOT_SUPPORTED",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "eu-central-1": {
+                "HVM64": "ami-e68f82fb",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "eu-west-1": {
+                "HVM64": "ami-33734044",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "sa-east-1": {
+                "HVM64": "NOT_SUPPORTED",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "us-east-1": {
+                "HVM64": "ami-61bbf104",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "us-east-2": {
+                "HVM64": "NOT_SUPPORTED",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "us-west-1": {
+                "HVM64": "NOT_SUPPORTED",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "us-west-2": {
+                "HVM64": "NOT_SUPPORTED",
+                "HVMG2": "NOT_SUPPORTED"
+            }
+        },
+        "Region2Principal": {
+            "us-east-1": {
+                "EC2Principal": "ec2.amazonaws.com"
+            },
+            "us-west-2": {
+                "EC2Principal": "ec2.amazonaws.com"
+            },
+            "us-west-1": {
+                "EC2Principal": "ec2.amazonaws.com"
+            },
+            "eu-west-1": {
+                "EC2Principal": "ec2.amazonaws.com"
+            },
+            "ap-southeast-1": {
+                "EC2Principal": "ec2.amazonaws.com"
+            },
+            "ap-southeast-2": {
+                "EC2Principal": "ec2.amazonaws.com"
+            },
+            "ap-northeast-1": {
+                "EC2Principal": "ec2.amazonaws.com"
+            },
+            "ap-northeast-2": {
+                "EC2Principal": "ec2.amazonaws.com"
+            },
+            "sa-east-1": {
+                "EC2Principal": "ec2.amazonaws.com"
+            },
+            "cn-north-1": {
+                "EC2Principal": "ec2.amazonaws.com.cn"
+            },
+            "eu-central-1": {
+                "EC2Principal": "ec2.amazonaws.com"
+            }
+        },
+        "VpcCidrs": {
+            "vpc": {
+                "cidr": "172.31.0.0/16"
+            }
+        },
+        "NiFi": {
+            "variables": {
+                "VERSION": "1.1.0",
+                "HOME": "/opt/nifi"
+            }
+        }
+    },
+    "Resources": {
+        "NiFiEc2ResourcePolicy": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "NiFi_EC2Resource_Policy",
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "ec2:Describe*"
+                            ],
+                            "Resource": [
+                                "*"
+                            ]
+                        }
+                    ]
+                },
+                "Roles": [
+                    {
+                        "Ref": "NiFiEc2ResourceRole"
+                    }
+                ]
+            }
+        },
+        "NiFiEc2ResourceRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "RoleName": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "NiFi_Ec2Resource_Role-",
+                            {
+                                "Ref": "AWS::StackName"
+                            }
+                        ]
+                    ]
+                },
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    {
+                                        "Fn::FindInMap": [
+                                            "Region2Principal",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "EC2Principal"
+                                        ]
+                                    }
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "NiFiEc2ResourceInstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Roles": [
+                    {
+                        "Ref": "NiFiEc2ResourceRole"
+                    }
+                ]
+            }
+        },
+        "VPC": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": {
+                    "Fn::FindInMap": [
+                        "VpcCidrs",
+                        "vpc",
+                        "cidr"
+                    ]
+                },
+                "EnableDnsHostnames": true,
+                "EnableDnsSupport": true,
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "vpc-nifi-",
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "Subnet": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "CidrBlock": {
+                    "Fn::FindInMap": [
+                        "VpcCidrs",
+                        "vpc",
+                        "cidr"
+                    ]
+                },
+                "MapPublicIpOnLaunch": true,
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "sn-nifi-",
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            }
+        },
+        "InternetGateway": {
+            "Type": "AWS::EC2::InternetGateway",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "ig-nifi-",
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "AttachInternetGatewayToVPC": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "InternetGatewayId": {
+                    "Ref": "InternetGateway"
+                },
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            }
+        },
+        "RouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "rt-nifi-",
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "Route": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "InternetGateway"
+                },
+                "RouteTableId": {
+                    "Ref": "RouteTable"
+                }
+            }
+        },
+        "AttachRouteTableToSubnet": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "RouteTable"
+                },
+                "SubnetId": {
+                    "Ref": "Subnet"
+                }
+            }
+        },
+        "SecurityGroupInternal": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Enable all VPC internal traffic",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "-1",
+                        "FromPort": "-1",
+                        "ToPort": "-1",
+                        "SourceSecurityGroupId": {
+                            "Fn::GetAtt": [
+                                "VPC",
+                                "DefaultSecurityGroup"
+                            ]
+                        }
+                    },
+                    {
+                        "IpProtocol": "-1",
+                        "FromPort": "-1",
+                        "ToPort": "-1",
+                        "CidrIp": {
+                            "Fn::FindInMap": [
+                                "VpcCidrs",
+                                "vpc",
+                                "cidr"
+                            ]
+                        }
+                    }
+                ],
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": "-1",
+                        "FromPort": "-1",
+                        "ToPort": "-1",
+                        "CidrIp": {
+                            "Fn::FindInMap": [
+                                "VpcCidrs",
+                                "vpc",
+                                "cidr"
+                            ]
+                        }
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "sg-nifi-internal-",
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "SecurityGroupExternal": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Enable all VPC external traffic",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": "-1",
+                        "FromPort": "-1",
+                        "ToPort": "-1",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "sg-nifi-external-",
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "SecurityGroupSSH": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "SSH access",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    "sg-nifi-ssh-",
+                                    {
+                                        "Ref": "AWS::StackName"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "NiFiAutoScaling": {
+            "CreationPolicy": {
+                "ResourceSignal": {
+                    "Count": {
+                        "Ref": "ClusterSize"
+                    },
+                    "Timeout": "PT2H"
+                }
+            },
+            "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "Properties": {
+                "DesiredCapacity": {
+                    "Ref": "ClusterSize"
+                },
+                "LaunchConfigurationName": {
+                    "Ref": "NiFiLaunchConfiguration"
+                },
+                "MaxSize": {
+                    "Ref": "ClusterSize"
+                },
+                "MinSize": {
+                    "Ref": "ClusterSize"
+                },
+                "Tags": [
+                    {
+                        "Key": "App",
+                        "Value": "Apache NiFi",
+                        "PropagateAtLaunch": true
+                    },
+                    {
+                        "Key": "Version",
+                        "Value": {
+                            "Fn::FindInMap": [
+                                "NiFi",
+                                "variables",
+                                "VERSION"
+                            ]
+                        },
+                        "PropagateAtLaunch": true
+                    }
+                ],
+                "VPCZoneIdentifier": [
+                    {
+                        "Ref": "Subnet"
+                    }
+                ]
+            }
+        },
+        "NiFiLaunchConfiguration": {
+            "Type": "AWS::AutoScaling::LaunchConfiguration",
+            "Metadata": {
+                "AWS::CloudFormation::Init": {
+                    "configSets": {
+                        "configure-ec2-instance": [
+                            "configure-extra-volume",
+                            "configure-cfn",
+                            "configure-hostname",
+                            "configure-selinux",
+                            "disable-swap",
+                            "increase-number-of-tcp-socket-ports-available",
+                            "configure-security-limits",
+                            "configure-ssh-keys"
+                        ],
+                        "setup-tools": [
+                            "install-pip",
+                            "install-awscli",
+                            "install-ansible"
+                        ]
+                    },
+                    "configure-extra-volume": {
+                        "commands": {
+                            "01_create_label": {
+                                "command": "parted -a optimal /dev/xvdb mklabel msdos"
+                            },
+                            "02_create_partition": {
+                                "command": "parted -a optimal /dev/xvdb mkpart primary 0% 100%"
+                            },
+                            "03_format_partition": {
+                                "command": "mkfs.ext3 -b 4096 -m 1 /dev/xvdb1"
+                            },
+                            "04_update_fstab": {
+                                "command": "echo '/dev/xvdb1    /mnt/data01    ext3    defaults    1 2' >> /etc/fstab"
+                            },
+                            "05_create_mountpoint_directory": {
+                                "command": "mkdir -p /mnt/data01"
+                            },
+                            "06_mount_volume": {
+                                "command": "mount -a"
+                            }
+                        }
+                    },
+                    "configure-cfn": {
+                        "files": {
+                            "/etc/systemd/system/cfn-hup.service": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[Unit]\n",
+                                            "Description=Cloud formation helper daemon\n\n",
+                                            "[Service]\n",
+                                            "ExecStart=/usr/bin/cfn-hup\n",
+                                            "Restart=always\n",
+                                            "RestartSec=10s\n",
+                                            "Type=simple\n",
+                                            "TimeoutStartSec=120\n",
+                                            "TimeoutStopSec=15\n\n",
+                                            "[Install]\n",
+                                            "WantedBy=multi-user.target"
+                                        ]
+                                    ]
+                                },
+                                "mode": "000400",
+                                "owner": "root",
+                                "group": "root"
+                            },
+                            "/etc/cfn/cfn-hup.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[main]\n",
+                                            "stack=",
+                                            {
+                                                "Ref": "AWS::StackId"
+                                            },
+                                            "\n",
+                                            "region=",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n"
+                                        ]
+                                    ]
+                                },
+                                "mode": "000400",
+                                "owner": "root",
+                                "group": "root"
+                            },
+                            "/etc/cfn/hooks.d/cfn-auto-reloader.conf": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[cfn-auto-reloader-hook]\n",
+                                            "triggers=post.update\n",
+                                            "path=Resources.NiFiLaunchConfiguration.Metadata.AWS::CloudFormation::Init\n",
+                                            "action=/usr/bin/cfn-init -v ",
+                                            "--stack ",
+                                            {
+                                                "Ref": "AWS::StackName"
+                                            },
+                                            " ",
+                                            "--resource NiFiLaunchConfiguration ",
+                                            "--configsets configure-ec2-instance,setup-tools ",
+                                            "--region ",
+                                            {
+                                                "Ref": "AWS::Region"
+                                            },
+                                            "\n"
+                                        ]
+                                    ]
+                                },
+                                "mode": "000400",
+                                "owner": "root",
+                                "group": "root"
+                            }
+                        },
+                        "services": {
+                            "sysvinit": {
+                                "cfn-hup": {
+                                    "enabled": "true",
+                                    "ensureRunning": "true",
+                                    "files": [
+                                        "/etc/cfn/cfn-hup.conf",
+                                        "/etc/cfn/hooks.d/cfn-auto-reloader.conf"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "configure-hostname": {
+                        "files": {
+                            "/etc/cloud/cloud.cfg.d/99_hostname.cfg": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "preserve_hostname: true",
+                                            "\n"
+                                        ]
+                                    ]
+                                },
+                                "mode": "00644",
+                                "owner": "root",
+                                "group": "root"
+                            }
+                        }
+                    },
+                    "configure-selinux": {
+                        "commands": {
+                            "01_configuration_file_01": {
+                                "command": "sed -i 's/SELINUX=enforcing/SELINUX=permissive/g' /etc/sysconfig/selinux"
+                            },
+                            "02_configuration_file_02": {
+                                "command": "sed -i 's/SELINUX=enforcing/SELINUX=permissive/g' /etc/selinux/config"
+                            },
+                            "03_set_permissive": {
+                                "command": "setenforce 0"
+                            }
+                        }
+                    },
+                    "configure-security-limits": {
+                        "commands": {
+                            "01_set_maximum_file_handles_hard": {
+                                "command": "echo '*  hard  nofile  50000' > /etc/security/limits.d/10-nofile.conf"
+                            },
+                            "02_set_maximum_file_handles_soft": {
+                                "command": "echo '*  soft  nofile  50000' >> /etc/security/limits.d/10-nofile.conf"
+                            },
+                            "03_set_maximum_forked_processes_hard": {
+                                "command": "echo '*  hard  nproc  10000' > /etc/security/limits.d/20-nproc.conf"
+                            },
+                            "04_set_maximum_forked_processes_hard": {
+                                "command": "echo '*  soft  nproc  10000' >> /etc/security/limits.d/20-nproc.conf"
+                            },
+                            "05_set_maximum_forked_processes_hard": {
+                                "command": "echo 'root  soft  nproc  unlimited' >> /etc/security/limits.d/20-nproc.conf"
+                            }
+                        }
+                    },
+                    "increase-number-of-tcp-socket-ports-available": {
+                        "commands": {
+                            "01_increase_number_of_tcp_socket_ports_available": {
+                                "command": "sysctl -w net.ipv4.ip_local_port_range=\"10000 65000\""
+                            }
+                        }
+                    },
+                    "disable-swap": {
+                        "commands": {
+                            "01_fix_tuned_virtual_guest_profile": {
+                                "command": "sed -i 's/vm.swappiness = 30/vm.swappiness = 0/g' /usr/lib/tuned/virtual-guest/tuned.conf"
+                            },
+                            "02_set_swappiness": {
+                                "command": "sysctl vm.swappiness=0"
+                            }
+                        }
+                    },
+                    "configure-ssh-keys": {
+                        "commands": {
+                            "01_download_script": {
+                                "command": "curl -o /root/create-ssh-keys.sh -L https://github.com/zer0beat/nifi-for-aws/raw/${GIT_BRANCH}/ansible/create-ssh-keys.sh && chmod +x /root/create-ssh-keys.sh"
+                            },
+                            "02_run_script": {
+                                "command": "/root/create-ssh-keys.sh"
+                            }
+                        }
+                    },
+                    "install-pip": {
+                        "commands": {
+                            "01_download": {
+                                "command": "curl -o /tmp/get-pip.py -O https://bootstrap.pypa.io/get-pip.py"
+                            },
+                            "02_install": {
+                                "command": "python /tmp/get-pip.py"
+                            }
+                        }
+                    },
+                    "install-awscli": {
+                        "commands": {
+                            "01_install": {
+                                "command": "pip install awscli"
+                            }
+                        }
+                    },
+                    "install-ansible": {
+                        "packages": {
+                            "yum": {
+                                "ansible": []
+                            }
+                        }
+                    }
+                }
+            },
+            "Properties": {
+                "AssociatePublicIpAddress": true,
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/xvdb",
+                        "Ebs": {
+                            "VolumeSize": {
+                                "Ref": "DiskSize"
+                            },
+                            "VolumeType": {
+                                "Ref": "DiskType"
+                            }
+                        }
+                    }
+                ],
+                "EbsOptimized": false,
+                "IamInstanceProfile": {
+                    "Ref": "NiFiEc2ResourceInstanceProfile"
+                },
+                "ImageId": {
+                    "Fn::FindInMap": [
+                        "AWSRegionArch2AMI",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        {
+                            "Fn::FindInMap": [
+                                "AWSInstanceType2Arch",
+                                {
+                                    "Ref": "InstanceType"
+                                },
+                                "Arch"
+                            ]
+                        }
+                    ]
+                },
+                "InstanceType": {
+                    "Ref": "InstanceType"
+                },
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "SecurityGroups": [
+                    {
+                        "Ref": "SecurityGroupInternal"
+                    },
+                    {
+                        "Ref": "SecurityGroupExternal"
+                    },
+                    {
+                        "Ref": "SecurityGroupSSH"
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -xe\n",
+                                "yum install -y epel-release\n",
+                                "yum update -y\n",
+                                "yum install -y python-daemon pystache python-setuptools\n",
+                                "easy_install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+                                "/usr/bin/cfn-init -v ",
+                                "         --stack ",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource NiFiLaunchConfiguration ",
+                                "         --configsets configure-ec2-instance,setup-tools ",
+                                "         --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n",
+                                "/usr/bin/cfn-signal -e $? ",
+                                "         --stack ",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource NiFiAutoScaling ",
+                                "         --region ",
+                                {
+                                    "Ref": "AWS::Region"
+                                },
+                                "\n"
+                            ]
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}
