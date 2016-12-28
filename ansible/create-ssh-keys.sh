@@ -32,16 +32,18 @@ then
         done
     done
 
-    # Create and share ssh keys on all instances
+    # Create and share ssh keys on all instances and populate known_hosts file
     IFS=$'\n'
     for node in ${clusterNodes}
     do 
-        ssh -i /root/unsecure/id_rsa ${node} "ssh-keygen -f /home/centos/.ssh/id_rsa -t rsa -N '' && chown centos:centos /home/centos/.ssh/id_rsa*"
-        pubkey=$(ssh -i /root/unsecure/id_rsa ${node} "cat /home/centos/.ssh/id_rsa.pub")
+        ssh -oStrictHostKeyChecking=no -i /root/unsecure/id_rsa ${node} "ssh-keygen -f /home/centos/.ssh/id_rsa -t rsa -N '' && chown centos:centos /home/centos/.ssh/id_rsa*"
+        pubkey=$(ssh -oStrictHostKeyChecking=no -i /root/unsecure/id_rsa ${node} "cat /home/centos/.ssh/id_rsa.pub")
         for innerNode in ${clusterNodes}
         do 
             ssh -oStrictHostKeyChecking=no -i /root/unsecure/id_rsa ${innerNode} "echo ${pubkey} >> /home/centos/.ssh/authorized_keys" 
+            ssh -oStrictHostKeyChecking=no -i /root/unsecure/id_rsa ${node} "ssh-keyscan ${innerNode} >> /home/centos/.ssh/known_hosts"
         done
+        ssh -oStrictHostKeyChecking=no -i /root/unsecure/id_rsa ${node} "chown centos:centos /home/centos/.ssh/known_hosts"
     done
 
     # Delete initial keys on non 0 indexed instance
