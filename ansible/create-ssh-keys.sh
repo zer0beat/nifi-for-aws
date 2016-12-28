@@ -26,7 +26,7 @@ then
     # Wait to other instances
     for node in ${clusterNodes}
     do 
-        until ssh -i /root/unsecure/id_rsa -q ${node} exit
+        until ssh -oStrictHostKeyChecking=no -i /root/unsecure/id_rsa -q ${node} exit
         do
             sleep 10
         done
