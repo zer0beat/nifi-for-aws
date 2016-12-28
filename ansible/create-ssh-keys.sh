@@ -57,5 +57,6 @@ then
 
     # Delete initial keys on 0 indexed instance
     rm -rf /root/unsecure
+    rm -rf /root/.ssh/known_hosts
     sed -i -e "/$ansible-init/ d" /root/.ssh/authorized_keys
 fi
