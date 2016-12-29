@@ -42,7 +42,7 @@ then
         for innerNode in ${clusterNodes}
         do 
             ssh -oStrictHostKeyChecking=no -i /root/unsecure/id_rsa ${innerNode} "echo ${pubkey} >> /home/centos/.ssh/authorized_keys" 
-            ssh -oStrictHostKeyChecking=no -i /root/unsecure/id_rsa ${node} "ssh-keyscan ${innerNode} >> /home/centos/.ssh/known_hosts"
+            ssh -oStrictHostKeyChecking=no -i /root/unsecure/id_rsa ${node} "ssh-keyscan ${innerNode},$(getent hosts ${innerNode} | awk '{ print $1 }') >> /home/centos/.ssh/known_hosts"
             ssh -oStrictHostKeyChecking=no -i /root/unsecure/id_rsa ${node} "echo ${innerNode} >> /etc/ansible/hosts"
         done
         ssh -oStrictHostKeyChecking=no -i /root/unsecure/id_rsa ${node} "chown centos:centos /home/centos/.ssh/known_hosts"
