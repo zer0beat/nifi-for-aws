@@ -10,8 +10,9 @@
         },
         "ClusterSize": {
             "Default": "3",
-            "Description": "Number of nodes in the Apache NiFi cluster (3-5).",
+            "Description": "Number of nodes in the Apache NiFi cluster (2-5).",
             "AllowedValues": [
+                "2",
                 "3",
                 "4",
                 "5"
