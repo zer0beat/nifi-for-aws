@@ -319,6 +319,9 @@
             "us-east-1": {
                 "EC2Principal": "ec2.amazonaws.com"
             },
+            "us-east-2": {
+                "EC2Principal": "ec2.amazonaws.com"
+            },
             "us-west-2": {
                 "EC2Principal": "ec2.amazonaws.com"
             },
