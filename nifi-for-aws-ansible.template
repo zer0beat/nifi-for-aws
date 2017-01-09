@@ -782,7 +782,6 @@
                         "setup-tools": [
                             "install-pip",
                             "install-awscli",
-                            "configure-ssh-keys",
                             "install-ansible"
                         ]
                     },
@@ -982,7 +981,12 @@
                             }
                         }
                     },
-                    "configure-ssh-keys": {
+                    "install-ansible": {
+                        "packages": {
+                            "yum": {
+                                "ansible": []
+                            }
+                        },
                         "commands": {
                             "01_download_script": {
                                 "env": {
@@ -1011,13 +1015,6 @@
                                     }
                                 },
                                 "command": "/root/create-ssh-keys.sh"
-                            }
-                        }
-                    },
-                    "install-ansible": {
-                        "packages": {
-                            "yum": {
-                                "ansible": []
                             }
                         }
                     }
