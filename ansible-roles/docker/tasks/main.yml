@@ -1,0 +1,22 @@
+---
+- name: Add Docker repository
+  yum_repository:
+      name: docker
+      description: Docker Yum repo
+      baseurl: https://yum.dockerproject.org/repo/main/centos/7/
+      enabled: yes
+      gpgkey: https://yum.dockerproject.org/gpg
+      gpgcheck: yes
+
+- name: Install Docker
+  yum:
+      name: docker-engine
+      state: latest
+  notify:
+    - Enable Docker
+
+- name: Start Docker daemon
+  systemd:
+      name: docker
+      state: started
+...
