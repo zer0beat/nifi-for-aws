@@ -10,8 +10,9 @@
         },
         "ClusterSize": {
             "Default": "3",
-            "Description": "Number of nodes in the Apache NiFi cluster (3-5).",
+            "Description": "Number of nodes in the Apache NiFi cluster (2-5).",
             "AllowedValues": [
+                "2",
                 "3",
                 "4",
                 "5"
@@ -303,7 +304,7 @@
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-east-2": {
-                "HVM64": "NOT_SUPPORTED",
+                "HVM64": "ami-6a2d760f",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-west-1": {
@@ -317,6 +318,9 @@
         },
         "Region2Principal": {
             "us-east-1": {
+                "EC2Principal": "ec2.amazonaws.com"
+            },
+            "us-east-2": {
                 "EC2Principal": "ec2.amazonaws.com"
             },
             "us-west-2": {
