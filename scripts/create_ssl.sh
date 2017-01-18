@@ -14,8 +14,8 @@ toolkit_filename=${toolkit_mirror##*/}
 dir=`mktemp -d --tmpdir` && cd $dir
 
 printf "%s %s\n" "Downloading Apache Toolkit into" $dir
-#curl -o $toolkit_filename $toolkit_mirror
-#sudo tar -zxf $toolkit_filename -C /opt/nifi --strip-components 1
+curl -o $toolkit_filename $toolkit_mirror
+sudo tar -zxf $toolkit_filename -C /opt/nifi --strip-components 1
 
 
 printf  "%s\n" "Create trustores, certificate and keystore..."
