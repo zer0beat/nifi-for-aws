@@ -11,6 +11,6 @@ RUN         yum install -y java-1.8.0-openjdk tar && \
             mkdir -p /opt/nifi && \
             curl ${NIFI_MIRROR} | tar xvz -C ${NIFI_HOME} --strip-components=1
 
-RUN         export JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:/bin/java::")
-
 EXPOSE      80 443
+
+CMD ["/opt/nifi/bin/nifi.sh","run"]
